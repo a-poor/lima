@@ -6,6 +6,7 @@ import {
   AlertCircle,
   Archive,
   ArchiveX,
+  ArrowLeft,
   File,
   Inbox,
   MessagesSquare,
@@ -15,6 +16,7 @@ import {
   Users2,
 } from "lucide-react";
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   ResizableHandle,
@@ -34,6 +36,7 @@ import { AccountSwitcher } from "@/components/mail-account-switcher"
 import { MailDisplay } from "@/components/mail-display"
 import { MailList } from "@/components/mail-list"
 import { Nav } from "@/components/mail-nav"
+import { ChatPlaceholder } from "@/components/chat-placeholder"
 import type { Mail } from "@/dtypes"
 import { useMail } from "@/components/mail-util"
 
@@ -47,6 +50,7 @@ interface MailProps {
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
   navCollapsedSize: number
+  chatCollapsedSize: number
 }
 
 export function Mail({
@@ -57,17 +61,14 @@ export function Mail({
   navCollapsedSize,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
-  const [mail] = useMail()
+  const [isChatCollapsed, setIsChatCollapsed] = React.useState(false)
+  const [mail, setMail] = useMail()
+  const selectedMail = mails.find((item) => item.id === mail.selected) || null
 
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
         direction="horizontal"
-        onLayout={(sizes: number[]) => {
-          document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
-            sizes
-          )}`
-        }}
         className="h-full items-stretch"
       >
         <ResizablePanel
@@ -78,15 +79,9 @@ export function Mail({
           maxSize={20}
           onCollapse={() => {
             setIsCollapsed(true)
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-              true
-            )}`
           }}
           onResize={() => {
             setIsCollapsed(false)
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-              false
-            )}`
           }}
           className={cn(
             isCollapsed &&
@@ -182,46 +177,79 @@ export function Mail({
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
-          <Tabs defaultValue="all">
-            <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold">Inbox</h1>
-              <TabsList className="ml-auto">
-                <TabsTrigger
-                  value="all"
-                  className="text-zinc-600 dark:text-zinc-200"
+          {mail.selected ? (
+            <div className="flex h-full flex-col">
+              <div className="flex h-[52px] items-center px-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMail({ selected: null })}
+                  className="mr-2"
                 >
-                  All mail
-                </TabsTrigger>
-                <TabsTrigger
-                  value="unread"
-                  className="text-zinc-600 dark:text-zinc-200"
-                >
-                  Unread
-                </TabsTrigger>
-              </TabsList>
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Back
+                </Button>
+                <h1 className="text-xl font-bold truncate">
+                  {selectedMail?.subject || 'Email'}
+                </h1>
+              </div>
+              <Separator />
+              <div className="flex-1">
+                <MailDisplay mail={selectedMail} />
+              </div>
             </div>
-            <Separator />
-            <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <form>
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search" className="pl-8" />
-                </div>
-              </form>
-            </div>
-            <TabsContent value="all" className="m-0">
-              <MailList items={mails} />
-            </TabsContent>
-            <TabsContent value="unread" className="m-0">
-              <MailList items={mails.filter((item) => !item.read)} />
-            </TabsContent>
-          </Tabs>
+          ) : (
+            <Tabs defaultValue="all" className="gap-0">
+              <div className="flex h-[52px] items-center justify-center px-2">
+                <h1 className="text-xl font-bold">Inbox</h1>
+                <TabsList className="ml-auto">
+                  <TabsTrigger
+                    value="all"
+                    className="text-zinc-600 dark:text-zinc-200"
+                  >
+                    All mail
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="unread"
+                    className="text-zinc-600 dark:text-zinc-200"
+                  >
+                    Unread
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              <Separator />
+              <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <form>
+                  <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search" className="pl-8" />
+                  </div>
+                </form>
+              </div>
+              <TabsContent value="all" className="m-0">
+                <MailList items={mails} />
+              </TabsContent>
+              <TabsContent value="unread" className="m-0">
+                <MailList items={mails.filter((item) => !item.read)} />
+              </TabsContent>
+            </Tabs>
+          )}
         </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={defaultLayout[2]} minSize={30}>
-          <MailDisplay
-            mail={mails.find((item) => item.id === mail.selected) || null}
-          />
+        <ResizableHandle withHandle={!isChatCollapsed} />
+        <ResizablePanel
+          defaultSize={defaultLayout[2]}
+          collapsedSize={0}
+          collapsible={true}
+          minSize={15}
+          maxSize={40}
+          onCollapse={() => {
+            setIsChatCollapsed(true)
+          }}
+          onResize={() => {
+            setIsChatCollapsed(false)
+          }}
+        >
+          <ChatPlaceholder />
         </ResizablePanel>
       </ResizablePanelGroup>
     </TooltipProvider>

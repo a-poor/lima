@@ -72,9 +72,9 @@ export function App() {
             labels: ["work", "budget"],
           },
         ]}
-        defaultLayout={[
-        ]}
-        navCollapsedSize={0}
+        defaultLayout={[265, 440, 655]}
+        navCollapsedSize={4}
+        chatCollapsedSize={0}
       />
     </main>
   );
