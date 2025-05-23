@@ -10,6 +10,7 @@ import {
   File,
   Inbox,
   MessagesSquare,
+  MoreHorizontal,
   Send,
   ShoppingCart,
   Trash2,
@@ -17,6 +18,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import {
   ResizableHandle,
@@ -24,12 +31,6 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { Separator } from "@/components/ui/separator"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 import { AccountSwitcher } from "@/components/mail-account-switcher"
@@ -62,6 +63,7 @@ export function Mail({
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const [isChatCollapsed, setIsChatCollapsed] = React.useState(false)
+  const [mailView, setMailView] = React.useState<"all" | "unread">("all")
   const [mail, setMail] = useMail()
   const selectedMail = mails.find((item) => item.id === mail.selected) || null
 
@@ -199,23 +201,24 @@ export function Mail({
               </div>
             </div>
           ) : (
-            <Tabs defaultValue="all" className="gap-0">
-              <div className="flex h-[52px] items-center justify-center px-2">
+            <div className="flex h-full flex-col">
+              <div className="flex h-[52px] shrink-0 items-center justify-center px-4">
                 <h1 className="text-xl font-bold">Inbox</h1>
-                <TabsList className="ml-auto">
-                  <TabsTrigger
-                    value="all"
-                    className="text-zinc-600 dark:text-zinc-200"
-                  >
-                    All mail
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="unread"
-                    className="text-zinc-600 dark:text-zinc-200"
-                  >
-                    Unread
-                  </TabsTrigger>
-                </TabsList>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="ml-auto">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setMailView("all")}>
+                      All mail
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setMailView("unread")}>
+                      Unread
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               <Separator />
               <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -226,13 +229,10 @@ export function Mail({
                   </div>
                 </form>
               </div>
-              <TabsContent value="all" className="m-0">
-                <MailList items={mails} />
-              </TabsContent>
-              <TabsContent value="unread" className="m-0">
-                <MailList items={mails.filter((item) => !item.read)} />
-              </TabsContent>
-            </Tabs>
+              <div className="flex-1">
+                <MailList items={mailView === "all" ? mails : mails.filter((item) => !item.read)} />
+              </div>
+            </div>
           )}
         </ResizablePanel>
         <ResizableHandle withHandle={!isChatCollapsed} />
